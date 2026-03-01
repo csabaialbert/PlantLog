@@ -1,0 +1,98 @@
+﻿@page "/my-plants"
+@rendermode InteractiveServer
+@using PlantLog.PlantModels.Entities
+@using Microsoft.AspNetCore.Components.Authorization
+@using PlantLog.Services
+
+@inject PlantService PlantService
+@inject AuthenticationStateProvider AuthStateProvider
+
+<div class="container mt-4">
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <h2><i class="bi bi-flower1"></i> Saját növényeim</h2>
+        <a href="/add-plant" class="btn btn-success">+ Új növény</a>
+    </div>
+
+    <AuthorizeView>
+        <Authorized>
+            @if (userPlants == null)
+            {
+                <div class="text-center">
+                    <div class="spinner-border text-success" role="status"></div>
+                    <p>Növények betöltése a MongoDB-ből...</p>
+                </div>
+            }
+            else if (!userPlants.Any())
+            {
+                <div class="alert alert-info">Még nincsenek mentett növényeid. Kezdd el a gyűjtést!</div>
+            }
+            else
+            {
+                <div class="row row-cols-1 row-cols-md-3 g-4">
+                    @foreach (var plant in userPlants)
+                    {
+                        <div class="col">
+                            <div class="card h-100 shadow-sm">
+                                @if (plantImages.ContainsKey(plant.ImageId))
+                                {
+                                    <img src="@plantImages[plant.ImageId]" class="card-img-top" style="height: 200px; object-fit: cover;" alt="@plant.Nickname">
+                                }
+                                else
+                                {
+                                    <div class="text-center py-5 bg-light">Kép betöltése...</div>
+                                }
+                                <div class="card-body">
+                                    <h5 class="card-title text-success">@plant.Nickname</h5>
+                                    <h6 class="card-subtitle mb-2 text-muted">@plant.SpeciesId</h6>
+                                    <p class="card-text small">@plant.Description</p>
+                                    <ul class="list-group list-group-flush mb-3">
+                                        <li class="list-group-item">📍 Hely: @plant.Location</li>
+                                        <li class="list-group-item">💧 Öntözés: @plant.WateringFrequency naponta</li>
+                                    </ul>
+                                    <div class="d-grid">
+                                        <button class="btn btn-outline-primary btn-sm" @onclick="@(() => Nav.NavigateTo($"/plant-details/{plant.Id}"))">
+                                            Részletek & Napló
+                                        </button>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    }
+                </div>
+            }
+        </Authorized>
+        <NotAuthorized>
+            <div class="alert alert-danger">A megtekintéshez be kell jelentkezned!</div>
+        </NotAuthorized>
+    </AuthorizeView>
+</div>
+
+@code {
+    private List<Plant>? userPlants;
+    private Dictionary<string, string> plantImages = new();
+    [Inject]
+    private NavigationManager Nav { get; set; }
+
+    protected override async Task OnInitializedAsync()
+    {
+        var authState = await AuthStateProvider.GetAuthenticationStateAsync();
+        var userId = authState.User.FindFirst(System.Security.Claims.ClaimTypes.NameIdentifier)?.Value;
+
+        if (userId != null)
+        {
+            // 1. Csak a bejelentkezett User növényeit kérjük le
+            userPlants = await PlantService.GetUserPlantsAsync(userId);
+
+            // 2. Képek aszinkron betöltése a GridFS-ből
+            foreach (var plant in userPlants)
+            {
+                if (!string.IsNullOrEmpty(plant.ImageId))
+                {
+                    var base64 = await PlantService.GetPlantImageBase64Async(plant.ImageId);
+                    plantImages[plant.ImageId] = base64;
+                    StateHasChanged(); // Frissítjük a felületet, ahogy a képek megérkeznek
+                }
+            }
+        }
+    }
+}

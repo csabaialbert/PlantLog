@@ -1,0 +1,143 @@
+﻿@page "/add-plant"
+@rendermode InteractiveServer
+@using PlantLog.PlantModels.Dtos
+@using PlantLog.PlantModels.Entities
+@using Microsoft.AspNetCore.Components.Authorization
+@using MongoDB.Driver
+@using PlantLog.Services
+@inject PlantService PlantService
+@inject IMongoDatabase MongoDb
+@inject AuthenticationStateProvider AuthStateProvider
+@inject NavigationManager Nav
+
+<div class="container mt-4">
+    <div class="card shadow">
+        <div class="card-header bg-success text-white">
+            <h3><i class="bi bi-plus-circle"></i> Új növény mentése a naplóba</h3>
+        </div>
+        <div class="card-body">
+            <AuthorizeView Context="authContext">
+                <Authorized>
+                    <EditForm Model="@plantDto" OnValidSubmit="HandleSubmit" FormName="CreatePlantForm">
+                        <DataAnnotationsValidator />
+                        <ValidationSummary class="text-danger" />
+
+                        <div class="row">
+                            <div class="col-md-6 mb-3">
+                                <label class="form-label font-weight-bold">Növény beceneve:</label>
+                                <InputText @bind-Value="plantDto.Name" class="form-control" placeholder="pl. Kaktuszka" />
+                            </div>
+
+                            <div class="col-md-6 mb-3">
+                                <label class="form-label font-weight-bold">Fajta kiválasztása (150 faj közül):</label>
+                                <select @bind="plantDto.Species" class="form-control">
+                                    <option value="">-- Kérlek válassz --</option>
+                                    @foreach (var s in speciesList)
+                                    {
+                                        <option value="@s.Name">@s.Name (@s.LatinName)</option>
+                                    }
+                                </select>
+                            </div>
+                        </div>
+
+                        <div class="row">
+                            <div class="col-md-6 mb-3">
+                                <label class="form-label font-weight-bold">Helyszín:</label>
+                                <InputText @bind-Value="plantDto.Location" class="form-control" placeholder="pl. Nappali ablak" />
+                            </div>
+                            <div class="col-md-6 mb-3">
+                                <label class="form-label font-weight-bold">Öntözési gyakoriság (nap):</label>
+                                <InputNumber @bind-Value="plantDto.WateringFrequency" class="form-control" />
+                            </div>
+                        </div>
+
+                        <div class="mb-3">
+                            <label class="form-label font-weight-bold">Leírás:</label>
+                            <InputTextArea @bind-Value="plantDto.Description" class="form-control" rows="3" />
+                        </div>
+
+                        <div class="mb-3">
+                            <label class="form-label font-weight-bold">Kép feltöltése (MongoDB GridFS-be kerül):</label>
+                            <InputFile OnChange="OnInputFileChange" class="form-control" accept="image/*" />
+                            @if (selectedFile != null)
+                            {
+                                <div class="mt-2 text-muted small">Kiválasztva: @selectedFile.Name (@(selectedFile.Size / 1024) KB)</div>
+                            }
+                        </div>
+
+                        <div class="d-grid gap-2">
+                            <button type="submit" class="btn btn-success btn-lg" disabled="@isSubmitting">
+                                @if (isSubmitting)
+                                {
+                                    <span class="spinner-border spinner-border-sm"></span> <span>Mentés folyamatban...</span>
+                                }
+                                else
+                                {
+                                    <span>Növény Mentése</span>
+                                }
+                            </button>
+                        </div>
+                    </EditForm>
+                </Authorized>
+                <NotAuthorized>
+                    <div class="alert alert-warning">
+                        A növény mentéséhez kérlek <a href="Identity/Account/Login">jelentkezz be</a>!
+                    </div>
+                </NotAuthorized>
+            </AuthorizeView>
+        </div>
+    </div>
+</div>
+
+@code {
+    private PlantCreateDto plantDto = new() { LastWatered = DateTime.Now };
+    private List<Species> speciesList = new();
+    private IBrowserFile? selectedFile;
+    private bool isSubmitting = false;
+
+    protected override async Task OnInitializedAsync()
+    {
+        // Lekérjük a MongoDB-ből a 150 fajtát a legördülőhöz
+        var collection = MongoDb.GetCollection<Species>("Species");
+        speciesList = await collection.Find(_ => true).ToListAsync();
+    }
+
+    private void OnInputFileChange(InputFileChangeEventArgs e)
+    {
+        selectedFile = e.File;
+    }
+
+    private async Task HandleSubmit()
+    {
+        if (selectedFile == null) return;
+
+        isSubmitting = true;
+        try
+        {
+            // 1. Megszerezzük a bejelentkezett felhasználó ID-ját az MSSQL/Identity-ből
+            var authState = await AuthStateProvider.GetAuthenticationStateAsync();
+            var user = authState.User;
+            var userId = user.FindFirst(System.Security.Claims.ClaimTypes.NameIdentifier)?.Value;
+
+            if (userId != null)
+            {
+                // 2. Stream megnyitása a képhez
+                using var stream = selectedFile.OpenReadStream(maxAllowedSize: 1024 * 1024 * 15); // Max 15MB
+
+                // 3. Küldés a PlantService-nek (ami menti a Mongóba és a GridFS-be)
+                await PlantService.CreatePlantAsync(plantDto, stream, selectedFile.Name, userId);
+
+                // 4. Átirányítás a listához
+                Nav.NavigateTo("/my-plants");
+            }
+        }
+        catch (Exception ex)
+        {
+            Console.WriteLine($"Hiba mentéskor: {ex.Message}");
+        }
+        finally
+        {
+            isSubmitting = false;
+        }
+    }
+}

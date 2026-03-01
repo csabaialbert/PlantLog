@@ -1,7 +1,68 @@
 ﻿@page "/"
+@using Microsoft.AspNetCore.Components.Authorization
+@using PlantLog.Services
+@inject PlantService PlantService
+@inject AuthenticationStateProvider AuthStateProvider
 
-<PageTitle>Home</PageTitle>
+<PageTitle>PlantLog - Főoldal</PageTitle>
 
-<h1>Hello, world!</h1>
+<div class="container mt-4 text-center">
+    <h1 class="display-4 text-success mb-4">Üdvözöllek a PlantLog-ban! 🌿</h1>
 
-Welcome to your new app.
+    <AuthorizeView>
+        <Authorized>
+            <div class="row mt-5 justify-content-center">
+                <div class="col-md-4">
+                    <div class="card bg-success text-white shadow-sm mb-4">
+                        <div class="card-body">
+                            <h2 class="card-title">@totalCount</h2>
+                            <p class="card-text">Összes regisztrált növény</p>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-md-4">
+                    <div class="card @(thirstyCount > 0 ? "bg-danger" : "bg-info") text-white shadow-sm mb-4">
+                        <div class="card-body">
+                            <h2 class="card-title">@thirstyCount</h2>
+                            <p class="card-text">Szomjas növények (Öntözés esedékes)</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="mt-4">
+                <a href="/my-plants" class="btn btn-primary btn-lg mx-2">Növényeim megtekintése</a>
+                <a href="/add-plant" class="btn btn-outline-success btn-lg mx-2">Új növény hozzáadása</a>
+            </div>
+        </Authorized>
+        <NotAuthorized>
+            <div class="jumbotron p-5 bg-light rounded shadow">
+                <h3>Vezesd digitálisan növényeid életét!</h3>
+                <p class="lead">A használathoz kérlek jelentkezz be vagy regisztrálj.</p>
+                <hr class="my-4">
+                <div class="d-grid gap-2 d-md-block">
+                    <a class="btn btn-success btn-lg" href="Account/Login">Bejelentkezés</a>
+                    <a class="btn btn-outline-secondary btn-lg" href="Account/Register">Regisztráció</a>
+                </div>
+            </div>
+        </NotAuthorized>
+    </AuthorizeView>
+</div>
+
+@code {
+    private int totalCount = 0;
+    private int thirstyCount = 0;
+
+    protected override async Task OnInitializedAsync()
+    {
+        var authState = await AuthStateProvider.GetAuthenticationStateAsync();
+        var userId = authState.User.FindFirst(System.Security.Claims.ClaimTypes.NameIdentifier)?.Value;
+
+        if (userId != null)
+        {
+            var stats = await PlantService.GetPlantStatsAsync(userId);
+            totalCount = stats.Total;
+            thirstyCount = stats.Thirsty;
+        }
+    }
+}

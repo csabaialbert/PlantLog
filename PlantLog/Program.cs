@@ -1,11 +1,24 @@
 using Microsoft.AspNetCore.Components.Authorization;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.EntityFrameworkCore;
+using MongoDB.Driver;
 using PlantLog.Components;
 using PlantLog.Components.Account;
 using PlantLog.Data;
+using PlantLog.Services;
 
 var builder = WebApplication.CreateBuilder(args);
+
+var mongoConnectionString = builder.Configuration.GetConnectionString("MongoConnection");
+var mongoDatabaseName = builder.Configuration.GetValue<string>("MongoDbSettings:DatabaseName");
+
+var mongoClient = new MongoClient(mongoConnectionString);
+var mongoDatabase = mongoClient.GetDatabase(mongoDatabaseName);
+
+builder.Services.AddSingleton<IMongoClient>(mongoClient);
+builder.Services.AddSingleton(mongoDatabase);
+
+builder.Services.AddScoped<MongoSeedService>();
 
 // Add services to the container.
 builder.Services.AddRazorComponents()
@@ -34,9 +47,27 @@ builder.Services.AddIdentityCore<ApplicationUser>(options => options.SignIn.Requ
     .AddDefaultTokenProviders();
 
 builder.Services.AddSingleton<IEmailSender<ApplicationUser>, IdentityNoOpEmailSender>();
+builder.Services.AddScoped<PlantService>();
 
 var app = builder.Build();
 
+//MongoDb seed
+using (var scope = app.Services.CreateScope())
+{
+    var services = scope.ServiceProvider;
+    try
+    {
+        var seedService = services.GetRequiredService<MongoSeedService>();
+
+        await seedService.SeedSpeciesAsync();
+
+        Console.WriteLine(">>> MongoDB Seed sikeresen lefutott (150 faj ellenõrizve/létrehozva).");
+    }
+    catch (Exception ex)
+    {
+        Console.WriteLine($">>> Hiba történt a MongoDB seedelése közben: {ex.Message}");
+    }
+}
 // Configure the HTTP request pipeline.
 if (app.Environment.IsDevelopment())
 {
