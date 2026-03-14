@@ -1,6 +1,7 @@
 ![.NET](https://img.shields.io/badge/.NET-8-purple)
-![MongoDB](https://img.shields.io/badge/MongoDB-NoSQL-green)
 ![Blazor](https://img.shields.io/badge/Blazor-Server-blue)
+![MongoDB](https://img.shields.io/badge/MongoDB-NoSQL-green)
+![MSSQL](https://img.shields.io/badge/MSSQL-Database-red)
 # PlantLog - Növénygondozási Napló
 A PlantLog egy modern, webalapú alkalmazás, amely segít a növénykedvelőknek digitálisan nyilvántartani növényeiket, követni azok fejlődését és rendszerezni a gondozási feladatokat.
 
