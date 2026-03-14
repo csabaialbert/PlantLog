@@ -58,3 +58,19 @@ A rugalmas, hierarchikus adatokhoz. A naplóbejegyzések a teljesítmény érdek
 Az első futtatáskor a rendszer automatikusan létrehozza az SQL sémát (Migrations) és feltölti a MongoDB Species kollekcióját a mellékelt JSON fájlból.
 ## Licenc
 Ez a projekt oktatási célból készült.
+
+flowchart LR
+  U["Felhasználó"]
+  UI["Blazor felhasználói felület<br/>(Components / Pages)"]
+  S["Szolgáltatási réteg<br/>(PlantService, MongoSeedService)"]
+  D["Domain modellek<br/>(Entities, DTO-k)"]
+  SQL["MSSQL Server<br/>ASP .NET Identity"]
+  MONGO["MongoDB<br/>(Plants, Species)"]
+  GRIDFS["MongoDB<br/>(képek tárolása)"]
+
+  U --> UI
+  UI --> S
+  S --> D
+  S --> SQL
+  S --> MONGO
+  MONGO --> GRIDFS
