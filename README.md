@@ -59,18 +59,20 @@ Az első futtatáskor a rendszer automatikusan létrehozza az SQL sémát (Migra
 ## Licenc
 Ez a projekt oktatási célból készült.
 
-flowchart LR
-  U["Felhasználó"]
-  UI["Blazor felhasználói felület<br/>(Components / Pages)"]
-  S["Szolgáltatási réteg<br/>(PlantService, MongoSeedService)"]
-  D["Domain modellek<br/>(Entities, DTO-k)"]
-  SQL["MSSQL Server<br/>ASP .NET Identity"]
-  MONGO["MongoDB<br/>(Plants, Species)"]
-  GRIDFS["MongoDB<br/>(képek tárolása)"]
+```mermaid
+  flowchart LR
+      U["Felhasználó"]
+      UI["Blazor felhasználói felület (Components / Pages)"]
+      S["Szolgáltatási réteg (PlantService, MongoSeedService)"]
+      D["Domain modellek (Entities, DTO-k)"]
+      SQL["MSSQL Server ASP .NET Identity"]
+      MONGO["MongoDB (Plants, Species)"]
+      GRIDFS["MongoDB (képek tárolása)"]
 
-  U --> UI
-  UI --> S
-  S --> D
-  S --> SQL
-  S --> MONGO
-  MONGO --> GRIDFS
+      U --> UI
+      UI --> S
+      S --> D
+      S --> SQL
+      S --> MONGO
+      MONGO --> GRIDFS
+  ```
