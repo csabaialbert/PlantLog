@@ -50,5 +50,5 @@ A rugalmas, hierarchikus adatokhoz. A naplóbejegyzések a teljesítmény érdek
 ### Konfiguráció
   Frissítsd az appsettings.json fájlban a Connection Stringeket.
 
-###Adatok inicializálása
+### Adatok inicializálása
 Az első futtatáskor a rendszer automatikusan létrehozza az SQL sémát (Migrations) és feltölti a MongoDB Species kollekcióját a mellékelt JSON fájlból.
