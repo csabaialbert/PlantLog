@@ -52,3 +52,5 @@ A rugalmas, hierarchikus adatokhoz. A naplóbejegyzések a teljesítmény érdek
 
 ### Adatok inicializálása
 Az első futtatáskor a rendszer automatikusan létrehozza az SQL sémát (Migrations) és feltölti a MongoDB Species kollekcióját a mellékelt JSON fájlból.
+## Licenc
+Ez a projekt oktatási célból készült.
