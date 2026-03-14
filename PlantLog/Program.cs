@@ -1,13 +1,34 @@
 using Microsoft.AspNetCore.Components.Authorization;
 using Microsoft.AspNetCore.Identity;
+using Microsoft.AspNetCore.Localization;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.Options;
 using MongoDB.Driver;
 using PlantLog.Components;
 using PlantLog.Components.Account;
 using PlantLog.Data;
 using PlantLog.Services;
+using System.Globalization;
 
 var builder = WebApplication.CreateBuilder(args);
+
+builder.Services.AddLocalization();
+
+var supportedCultures = new[]
+{
+    new CultureInfo("en"),
+    new CultureInfo("hu")
+};
+
+builder.Services.Configure<RequestLocalizationOptions>(options =>
+{
+    options.DefaultRequestCulture = new RequestCulture("en");
+
+    options.SupportedCultures = supportedCultures;
+    options.SupportedUICultures = supportedCultures;
+
+    options.RequestCultureProviders.Insert(0, new AcceptLanguageHeaderRequestCultureProvider());
+});
 
 var mongoConnectionString = builder.Configuration.GetConnectionString("MongoConnection");
 var mongoDatabaseName = builder.Configuration.GetValue<string>("MongoDbSettings:DatabaseName");
@@ -51,6 +72,11 @@ builder.Services.AddScoped<PlantService>();
 
 var app = builder.Build();
 
+
+var localizationOptions = app.Services
+    .GetRequiredService<IOptions<RequestLocalizationOptions>>().Value;
+
+app.UseRequestLocalization(localizationOptions);
 //MongoDb seed
 using (var scope = app.Services.CreateScope())
 {
