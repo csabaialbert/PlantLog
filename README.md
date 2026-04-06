@@ -56,8 +56,11 @@ A rugalmas, hierarchikus adatokhoz. A naplóbejegyzések a teljesítmény érdek
 
 ### Adatok inicializálása
 Az első futtatáskor a rendszer automatikusan létrehozza az SQL sémát (Migrations) és feltölti a MongoDB Species kollekcióját a mellékelt JSON fájlból.
-## Licenc
-Ez a projekt oktatási célból készült.
+
+### Főbb mérnöki megoldások:
+- Hybrid Data Strategy: Strukturált identitáskezelés (MSSQL) + Rugalmas domain modellek (MongoDB).
+- Embedded Document Design: A teljesítmény optimalizálása érdekében a naplóbejegyzések beágyazott objektumként tárolódnak, csökkentve a JOIN-műveletek szükségességét.
+- Binary Stream Handling: GridFS implementáció a hatékony médiafájl-kezeléshez.
 
 ```mermaid
   flowchart LR
